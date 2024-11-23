@@ -1,4 +1,4 @@
-import os, glob, re, cv2, pandas, shutil
+import os, glob, re, cv2, pandas, shutil, subprocess
 import numpy as np
 from tqdm import tqdm
 from IPython.display import clear_output
@@ -14,6 +14,16 @@ def find_mp4_files(directory):
             mp4_files.append(file)
 
     return mp4_files
+
+def ffmpeg_compress_mp4_video(input_path, output_path, ffmpeg_path = 'C:\\ffmpeg'):
+    # function to compress
+    # find ffmpeg binary
+
+    # construct the command
+    command = "ffmpeg -i head1.png -i hdmiSpitting.mov -filter_complex \"[0:v][1:v] overlay=0:0\" -pix_fmt yuv420p -c:a copy output3.mov"
+    # run the command
+    subprocess.run(command, capture_output=True)
+    return compress_success
 
 # Function to extract date from a path
 def extract_date(path):
