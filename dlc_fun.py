@@ -1,8 +1,8 @@
-import os, glob, re, cv2, pandas, shutil, subprocess
+import os, glob, re, cv2, pandas, shutil, subprocess, time
 import numpy as np
 from tqdm import tqdm
 from IPython.display import clear_output
-
+#################################################################################
 def find_mp4_files(directory):
     # List to store all .mp4 file paths
     mp4_files = []
@@ -14,28 +14,84 @@ def find_mp4_files(directory):
             mp4_files.append(file)
 
     return mp4_files
+#################################################################################
+def ffmpeg_compress_mp4_video(fvidpath, procfolder, ffmpeg_path="C:\\ffmpeg\\bin"):
+    """
+    Compresses an MP4 file using ffmpeg and saves it with the name 
+    originalfile_reduced.mp4 in the specified destination folder.
 
-def ffmpeg_compress_mp4_video(input_path, output_path, ffmpeg_path = 'C:\\ffmpeg'):
-    # function to compress
-    # find ffmpeg binary
+    Args:
+      fvidpath: Path to the input MP4 file.
+      procfolder: Path to the destination folder.
+      ffmpeg_path: Path to the ffmpeg binary (optional).
+    """
 
-    # construct the command
-    command = "ffmpeg -i head1.png -i hdmiSpitting.mov -filter_complex \"[0:v][1:v] overlay=0:0\" -pix_fmt yuv420p -c:a copy output3.mov"
-    # run the command
-    subprocess.run(command, capture_output=True)
-    return compress_success
+    if not os.path.exists(procfolder):
+        os.mkdir(procfolder)
 
+    print(f'Encoding {fvidpath}...')
+
+    # Extract original filename and construct new filename
+    namestr, endstr = os.path.splitext(os.path.basename(fvidpath))
+    foutpath = os.path.join(procfolder, f'{namestr}_reduced{endstr}')
+
+    # Delete existing output file
+    if os.path.exists(foutpath):
+        os.remove(foutpath)
+
+    # Construct the ffmpeg command
+    commandStr = f'{os.path.join(ffmpeg_path, "ffmpeg")} -i {fvidpath} -c:v libx264 -crf 24 -preset veryfast -tune fastdecode -c:a copy {foutpath}'
+
+    # Start the timer
+    start_time = time.time()
+
+    # Run the command
+    status = subprocess.call(commandStr, shell=True)
+
+    if status == 0:
+        # Get file sizes
+        cratio = os.stat(fvidpath).st_size / os.stat(foutpath).st_size
+
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+
+        # Print statements for time elapsed and compression ratio
+        print(f'Time elapsed: {elapsed_time:.2f} s')
+        print(f'Compression ratio = {cratio:.3f}')
+        
+        pathfin = os.path.join(os.path.dirname(fvidpath), f'{namestr}_reduced{endstr}')
+        
+        # Video duration comparison using OpenCV (cv2)
+        vin = cv2.VideoCapture(fvidpath)
+        vindur = vin.get(cv2.CAP_PROP_POS_MSEC) / 1000
+        vin.release()
+
+        vout = cv2.VideoCapture(foutpath)
+        voutdur = vout.get(cv2.CAP_PROP_POS_MSEC) / 1000
+        vout.release()
+
+        if abs(vindur - voutdur) < 1e-3:
+            shutil.copyfile(foutpath, pathfin)
+            os.remove(fvidpath)  # Remove the original file
+        else:
+            raise ValueError('Something is off with the server?')
+
+    else:
+        print('Warning: Something went wrong with compression')
+
+    return foutpath, status
+#################################################################################
 # Function to extract date from a path
 def extract_date(path):
     date_regex = re.compile(r'\d{8}')
     match = date_regex.search(path)
     return match.group(0) if match else None
-
+#################################################################################
 def to_analyze_dlc(path):
     splitpath = os.path.split(path)
     csvpath = glob.glob(os.path.join(splitpath[0], splitpath[1][0:13] + '*_el.csv'))
     return len(csvpath)==0
-
+#################################################################################
 def remove_big_files(path):
     # remove h5 and pickles after you're done
     picklelisting = glob.glob(path + '*.pickle')
@@ -47,7 +103,7 @@ def remove_big_files(path):
     for ihdf in range(len(hdflisting)):
         os.remove(hdflisting[ihdf])
         print('removed h5 file')
-        
+#################################################################################        
 def copy_video_locally(sourcefile, dstfolder):
     if not os.path.exists(dstfolder):
         os.mkdir(dstfolder)
@@ -55,7 +111,7 @@ def copy_video_locally(sourcefile, dstfolder):
     print("Copying file to " + dstfile )
     shutil.copyfile(sourcefile, dstfile)
     return dstfile
-
+#################################################################################
 def get_mouse_compartment(vidpath):
     
     cap = cv2.VideoCapture(vidpath)
@@ -65,7 +121,7 @@ def get_mouse_compartment(vidpath):
     
     ret, frame   = cap.read()
     (ny,nx,ncol) = frame.shape
-    Nframes      = 400
+    Nframes      = 500
     Nskip        = 75
     imarray      = np.zeros((ny,nx, Nframes),dtype = np.uint8)
     print('determining mouse side...')
@@ -111,7 +167,7 @@ def get_mouse_compartment(vidpath):
     print(msgprint)
     cropval = [0, nx, y1, y2]
     return cropval
-
+#################################################################################
 def update_saved_csv(pathupdate, yadd):
     if yadd==0:
         return
@@ -130,4 +186,4 @@ def update_saved_csv(pathupdate, yadd):
         
         # Save the updated dataframe to a new CSV file, preserving the header structure
         df.to_csv(pathupdate, index=False, header=None)
-
+#################################################################################
