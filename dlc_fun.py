@@ -112,7 +112,7 @@ def copy_video_locally(sourcefile, dstfolder):
     shutil.copyfile(sourcefile, dstfile)
     return dstfile
 #################################################################################
-def get_mouse_compartment(vidpath, is_slider = False):
+def get_mouse_compartment(vidpath, is_slider = False, skipcrop = False):
     
     cap = cv2.VideoCapture(vidpath)
     # Check if camera opened successfully
@@ -121,61 +121,66 @@ def get_mouse_compartment(vidpath, is_slider = False):
     
     ret, frame   = cap.read()
     (ny,nx,ncol) = frame.shape
-    if is_slider:
-        #------------------------------------------------------------------------
-        print('cropping for slider, assering slider is on TOP...')
-        y1      = np.round(ny * 0.15)
+    if skipcrop:
+        y1      = np.round(ny * 0.1)
         y2      = np.round(ny * 0.9)
         cropval = [0, nx, y1, y2]
     else:
-        #------------------------------------------------------------------------
-        # we have to determine the side
-        Nframes      = 500
-        Nskip        = 75
-        imarray      = np.zeros((ny,nx, Nframes),dtype = np.uint8)
-        print('determining mouse side...')
-        print("frames done:")
-        pbar         = tqdm(total=Nframes)
-        count       = 0
-        while(cap.isOpened()):
-          # Capture frame-by-frame
-          ret, frame = cap.read()
-          if ret == True and count < Nframes*Nskip:
-            if np.mod(count,Nskip)==0:
-                indas = int(np.floor(count/Nskip))
-                imarray[:, :, indas] = frame[:, :, 0]
-                #print('frames done: ' + str(indas) + '/'+ str(Nframes), end="\r")
-                #clear_output(wait=True)  # Clear previous output
-                #print('frames done: ' + str(indas) + '/'+ str(Nframes)) 
-                pbar.update(1)  # Update progress bar
-            count+=1
-          # Break the loop
-          else: 
-            break
-         
-        # When everything done, release the video capture object
-        cap.release()
-         
-        # Closes all the frames
-        cv2.destroyAllWindows()
-        
-        signalframe = imarray - np.reshape(np.median(imarray,axis=2),(ny,nx,1))
-        vartop      = np.var(signalframe[int(ny/2)-300:int(ny/2),:,:])
-        varbottom   = np.var(signalframe[int(ny/2):int(ny/2)+300,:,:])
-        istop       = vartop > varbottom
-        if istop:
-            y1 = np.round(ny * 0.1)
-            y2 = int(ny/2 + 100)
-            msgprint = 'mouse found at the TOP part of the video' 
+        if is_slider:
+            #------------------------------------------------------------------------
+            print('cropping for slider, assering slider is on TOP...')
+            y1      = np.round(ny * 0.1)
+            y2      = np.round(ny * 0.9)
+            cropval = [0, nx, y1, y2]
         else:
-            y1 = int(ny/2-100)
-            y2 = np.round(ny * 0.9)
-            msgprint = 'mouse found at the BOTTOM part of the video' 
-        print(vartop)
-        print(varbottom)
-        print(msgprint)
-        cropval = [0, nx, y1, y2]
-        #------------------------------------------------------------------------
+            #------------------------------------------------------------------------
+            # we have to determine the side
+            Nframes      = 500
+            Nskip        = 75
+            imarray      = np.zeros((ny,nx, Nframes),dtype = np.uint8)
+            print('determining mouse side...')
+            print("frames done:")
+            pbar         = tqdm(total=Nframes)
+            count       = 0
+            while(cap.isOpened()):
+              # Capture frame-by-frame
+              ret, frame = cap.read()
+              if ret == True and count < Nframes*Nskip:
+                if np.mod(count,Nskip)==0:
+                    indas = int(np.floor(count/Nskip))
+                    imarray[:, :, indas] = frame[:, :, 0]
+                    #print('frames done: ' + str(indas) + '/'+ str(Nframes), end="\r")
+                    #clear_output(wait=True)  # Clear previous output
+                    #print('frames done: ' + str(indas) + '/'+ str(Nframes)) 
+                    pbar.update(1)  # Update progress bar
+                count+=1
+              # Break the loop
+              else: 
+                break
+             
+            # When everything done, release the video capture object
+            cap.release()
+             
+            # Closes all the frames
+            cv2.destroyAllWindows()
+            
+            signalframe = imarray - np.reshape(np.median(imarray,axis=2),(ny,nx,1))
+            vartop      = np.var(signalframe[int(ny/2)-300:int(ny/2),:,:])
+            varbottom   = np.var(signalframe[int(ny/2):int(ny/2)+300,:,:])
+            istop       = vartop > varbottom
+            if istop:
+                y1 = np.round(ny * 0.1)
+                y2 = int(ny/2 + 100)
+                msgprint = 'mouse found at the TOP part of the video' 
+            else:
+                y1 = int(ny/2-100)
+                y2 = np.round(ny * 0.9)
+                msgprint = 'mouse found at the BOTTOM part of the video' 
+            print(vartop)
+            print(varbottom)
+            print(msgprint)
+            cropval = [0, nx, y1, y2]
+            #------------------------------------------------------------------------
     return cropval
 #################################################################################
 def update_saved_csv(pathupdate, yadd):
