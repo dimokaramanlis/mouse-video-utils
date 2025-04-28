@@ -124,8 +124,8 @@ def get_mouse_compartment(vidpath, is_slider = False):
     if is_slider:
         #------------------------------------------------------------------------
         print('cropping for slider, assering slider is on TOP...')
-        y1 = np.round(ny * 0.15)
-        y2 = ny
+        y1      = np.round(ny * 0.15)
+        y2      = np.round(ny * 0.9)
         cropval = [0, nx, y1, y2]
     else:
         #------------------------------------------------------------------------
@@ -164,12 +164,12 @@ def get_mouse_compartment(vidpath, is_slider = False):
         varbottom   = np.var(signalframe[int(ny/2):int(ny/2)+300,:,:])
         istop       = vartop > varbottom
         if istop:
-            y1 = 0
+            y1 = np.round(ny * 0.1)
             y2 = int(ny/2 + 100)
             msgprint = 'mouse found at the TOP part of the video' 
         else:
             y1 = int(ny/2-100)
-            y2 = ny
+            y2 = np.round(ny * 0.9)
             msgprint = 'mouse found at the BOTTOM part of the video' 
         print(vartop)
         print(varbottom)
