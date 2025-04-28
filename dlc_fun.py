@@ -129,7 +129,7 @@ def get_mouse_compartment(vidpath, is_slider = False, skipcrop = False):
         if is_slider:
             #------------------------------------------------------------------------
             print('cropping for slider, assering slider is on TOP...')
-            y1      = np.round(ny * 0.1)
+            y1      = np.round(ny * 0.2)
             y2      = np.round(ny * 0.9)
             cropval = [0, nx, y1, y2]
         else:
@@ -141,7 +141,7 @@ def get_mouse_compartment(vidpath, is_slider = False, skipcrop = False):
             print('determining mouse side...')
             print("frames done:")
             pbar         = tqdm(total=Nframes)
-            count       = 0
+            count        = 0
             while(cap.isOpened()):
               # Capture frame-by-frame
               ret, frame = cap.read()
