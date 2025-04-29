@@ -201,4 +201,71 @@ def update_saved_csv(pathupdate, yadd):
         
         # Save the updated dataframe to a new CSV file, preserving the header structure
         df.to_csv(pathupdate, index=False, header=None)
+        
+        
+        
+        
+def update_saved_csv(pathupdate, yadd):
+    """
+    Updates specific columns in a CSV file by adding a value 'yadd'.
+
+    Args:
+        pathupdate (str): The path to the CSV file to update.
+        yadd (numeric): The value to add to the specified columns.
+                        If yadd is 0, the function returns without modification.
+    """
+    # If yadd is 0, no update is needed, so return early.
+    if yadd == 0:
+        return
+    try:
+        # Read the CSV file without a header.
+        df = pandas.read_csv(pathupdate, header=None, low_memory=False)
+
+        # Check if the DataFrame is empty or has too few columns/rows
+        if df.empty:
+            print(f"Warning: CSV file '{pathupdate}' is empty.")
+            return
+        if df.shape[1] < 3:
+            print(f"Warning: CSV file '{pathupdate}' has fewer than 3 columns. No columns to update.")
+            return
+        if df.shape[0] < 5:
+             print(f"Warning: CSV file '{pathupdate}' has fewer than 5 rows. No rows to update.")
+             return
+
+
+        # Identify the columns to update (starting from column index 2, every 3rd column)
+        # Ensure column indices are within the bounds of the DataFrame
+        cols_to_update = [col for col in range(2, df.shape[1], 3)]
+
+        if not cols_to_update:
+             print("Warning: No columns found to update based on the pattern (start at col 2, step 3).")
+             return
+
+        # --- Modification Section ---
+        # Iterate through the columns identified for update
+        for col in cols_to_update:
+            # Select rows from index 4 onwards for the current column
+            # Convert the selected slice to numeric, coercing errors to NaN (Not a Number)
+            # This avoids the 'errors=ignore' deprecation warning.
+            # Use .loc for direct assignment to avoid ChainedAssignmentError.
+            numeric_slice = pandas.to_numeric(df.loc[4:, col], errors='coerce')
+
+            # Add yadd to the numeric slice. Operations with NaN will result in NaN.
+            updated_slice = numeric_slice + yadd
+
+            # Assign the updated slice back to the DataFrame using .loc
+            # This ensures the original DataFrame is modified directly.
+            df.loc[4:, col] = updated_slice
+
+        # --- Save Updated DataFrame ---
+        # Save the modified DataFrame back to the original CSV file path.
+        # index=False prevents writing the DataFrame index as a column.
+        # header=None prevents writing a header row.
+        df.to_csv(pathupdate, index=False, header=None)
+        print(f"Successfully updated '{pathupdate}'.")
+
+    except FileNotFoundError:
+        print(f"Error: The file '{pathupdate}' was not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 #################################################################################
