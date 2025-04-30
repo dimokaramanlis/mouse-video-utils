@@ -182,29 +182,7 @@ def get_mouse_compartment(vidpath, is_slider = False, skipcrop = False):
             cropval = [0, nx, y1, y2]
             #------------------------------------------------------------------------
     return cropval
-#################################################################################
-def update_saved_csv(pathupdate, yadd):
-    if yadd==0:
-        return
-    else:
-        df = pandas.read_csv(pathupdate, header = None, low_memory=False)
-        
-        # Identify the columns to update (starting from column 2, 0-indexed)
-        cols_to_update = list(range(2, len(df.columns), 3))
-        
-        for col in cols_to_update:
-            #df[4:, col] = pandas.to_numeric(df[col][4:])
-            df[col][4:] = pandas.to_numeric(df[col][4:], errors='ignore')
-
-        # Modify the specified columns starting from row 5 (0-indexed row 4)
-        df.iloc[4:, cols_to_update] += yadd
-        
-        # Save the updated dataframe to a new CSV file, preserving the header structure
-        df.to_csv(pathupdate, index=False, header=None)
-        
-        
-        
-        
+#################################################################################        
 def update_saved_csv(pathupdate, yadd):
     """
     Updates specific columns in a CSV file by adding a value 'yadd'.
